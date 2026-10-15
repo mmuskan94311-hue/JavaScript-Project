@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Product Inventory Dashboard</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #dbeafe, #f3e8ff);
+    color: #1e293b;
+}
+
+.container {
+    max-width: 1000px;
+    margin: auto;
+}
+
+h1 {
+    text-align: center;
+    color: #4338ca;
+}
+
+.summary {
+    background: linear-gradient(135deg, #4f46e5, #9333ea);
+    color: white;
+    padding: 25px;
+    border-radius: 15px;
+    text-align: center;
+    margin: 25px 0;
+}
+
+.summary h2 {
+    margin: 0;
+}
+
+#total {
+    font-size: 35px;
+    margin: 12px;
+}
+
+.cards {
+    display: flex;
+    gap: 15px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.card {
+    flex: 1;
+    min-width: 150px;
+    padding: 20px;
+    text-align: center;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px #cbd5e1;
+}
+
+.card h3 {
+    color: #6366f1;
+}
+
+.form, .table-box, .report {
+    background: white;
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px #cbd5e1;
+}
+
+input, select {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border: 1px solid #c7d2fe;
+    border-radius: 7px;
+    font-size: 15px;
+}
+
+button {
+    padding: 12px 16px;
+    margin: 5px 4px 5px 0;
+    border: none;
+    border-radius: 7px;
+    background: #4f46e5;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+button:hover {
+    background: #312e81;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 480px;
+}
+
+.table-box {
+    overflow-x: auto;
+}
+
+th, td {
+    padding: 13px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+
+th {
+    background: #c7d2fe;
+    color: #312e81;
+}
+
+.budget {
+    color: #15803d;
+    font-weight: bold;
+}
+
+.standard {
+    color: #c2410c;
+    font-weight: bold;
+}
+
+.premium {
+    color: #7c3aed;
+    font-weight: bold;
+}
+
+.delete {
+    background: #dc2626;
+}
+
+#message {
+    font-weight: bold;
+}
+
+@media(max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h1>📦 Product Inventory Dashboard</h1>
+<p style="text-align:center">
+    Manage your products and view inventory analytics.
+</p>
+
+<div class="summary">
+    <h2>Total Inventory Value</h2>
+    <h1 id="total">$870</h1>
+    <p id="count">Total Products: 3</p>
+</div>
+
+<div class="cards">
+    <div class="card">
+        <h3>📦 Products</h3>
+        <h2 id="productCount">3</h2>
+    </div>
+
+    <div class="card">
+        <h3>💰 Average Price</h3>
+        <h2 id="average">$290</h2>
+    </div>
+
+    <div class="card">
+        <h3>⭐ Premium</h3>
+        <h2 id="premiumCount">1</h2>
+    </div>
+</div>
+
+<div class="form">
+    <h2>➕ Add New Product</h2>
+
+    <label for="productName">Product Name</label>
+    <input id="productName" type="text"
+           placeholder="Enter product name">
+
+    <label for="productPrice">Product Price ($)</label>
+    <input id="productPrice" type="number"
+           min="0.01" step="0.01"
+           placeholder="Enter product price">
+
+    <label for="productCategory">Category</label>
+    <select id="productCategory">
+        <option value="Budget">Budget</option>
+        <option value="Standard">Standard</option>
+        <option value="Premium">Premium</option>
+    </select>
+
+    <button type="button" onclick="addProduct()">
+        ➕ Add Product
+    </button>
+
+    <p id="message"></p>
+</div>
+
+<div>
+    <button type="button" onclick="showAll()">
+        📋 Show All Products
+    </button>
+
+    <button type="button" onclick="showAffordable()">
+        💰 Affordable Products (Under $200)
+    </button>
+</div>
+
+<div class="table-box">
+    <h2>🛍️ Product List</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Product Name</th>
+                <th>Price</th>
+                <th>Category</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+
+        <tbody id="productList"></tbody>
+    </table>
+</div>
+
+<div class="report">
+    <h2>📊 Analytics Report</h2>
+    <p id="analytics"></p>
+</div>
+
+</div>
+
+<script>
+"use strict";
+
+let products = [
+    { id: 1, name: "Laptop", price: 800, category: "Premium" },
+    { id: 2, name: "Mouse", price: 25, category: "Budget" },
+    { id: 3, name: "Keyboard", price: 45, category: "Budget" }
+];
+
+let nextId = 4;
+
+function money(price) {
+    return "$" + price.toLocaleString("en-US", {
+        maximumFractionDigits: 2
+    });
+}
+
+function addProduct() {
+    const name = document.getElementById("productName").value.trim();
+    const priceText = document.getElementById("productPrice").value;
+    const price = Number(priceText);
+    const category = document.getElementById("productCategory").value;
+    const message = document.getElementById("message");
+
+    if (name === "") {
+        message.style.color = "red";
+        message.textContent = "Please enter product name!";
+        return;
+    }
+
+    if (priceText === "" || !Number.isFinite(price) || price <= 0) {
+        message.style.color = "red";
+        message.textContent = "Please enter a valid price greater than zero!";
+        return;
+    }
+
+    products.push({
+        id: nextId++,
+        name: name,
+        price: price,
+        category: category
+    });
+
+    document.getElementById("productName").value = "";
+    document.getElementById("productPrice").value = "";
+
+    message.style.color = "green";
+    message.textContent = name + " added successfully!";
+
+    displayProducts(products);
+}
+
+function displayProducts(items) {
+    const list = document.getElementById("productList");
+    list.innerHTML = "";
+
+    if (items.length === 0) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 4;
+        cell.textContent = "No products found.";
+        row.appendChild(cell);
+        list.appendChild(row);
+    }
+
+    items.forEach(function(product) {
+        const row = document.createElement("tr");
+
+        const nameCell = document.createElement("td");
+        nameCell.textContent = product.name;
+
+        const priceCell = document.createElement("td");
+        priceCell.textContent = money(product.price);
+
+        const categoryCell = document.createElement("td");
+        categoryCell.textContent = product.category;
+        categoryCell.className = product.category.toLowerCase();
+
+        const actionCell = document.createElement("td");
+        const deleteButton = document.createElement("button");
+
+        deleteButton.textContent = "Delete";
+        deleteButton.className = "delete";
+        deleteButton.onclick = function() {
+            deleteProduct(product.id);
+        };
+
+        actionCell.appendChild(deleteButton);
+
+        row.appendChild(nameCell);
+        row.appendChild(priceCell);
+        row.appendChild(categoryCell);
+        row.appendChild(actionCell);
+
+        list.appendChild(row);
+    });
+
+    updateAnalytics();
+}
+
+function updateAnalytics() {
+    const total = products.reduce(function(sum, product) {
+        return sum + product.price;
+    }, 0);
+
+    const count = products.length;
+    const average = count ? total / count : 0;
+
+    const premium = products.filter(function(product) {
+        return product.category === "Premium";
+    }).length;
+
+    document.getElementById("total").textContent = money(total);
+    document.getElementById("count").textContent =
+        "Total Products: " + count;
+
+    document.getElementById("productCount").textContent = count;
+    document.getElementById("average").textContent = money(average);
+    document.getElementById("premiumCount").textContent = premium;
+
+    const affordable = products.filter(function(product) {
+        return product.price < 200;
+    }).length;
+
+    document.getElementById("analytics").textContent =
+        "Total value: " + money(total) +
+        " | Affordable products: " + affordable +
+        " | Premium products: " + premium;
+}
+
+function showAll() {
+    displayProducts(products);
+}
+
+function showAffordable() {
+    const affordable = products.filter(function(product) {
+        return product.price < 200;
+    });
+
+    displayProducts(affordable);
+}
+
+function deleteProduct(id) {
+    products = products.filter(function(product) {
+        return product.id !== id;
+    });
+
+    displayProducts(products);
+}
+
+displayProducts(products);
+</script>
+
+</body>
+</html>
